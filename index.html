@@ -40,70 +40,114 @@
             <br>
        
 
-            <br><br>
-            <legend>Endereço</legend>
+<br><br>
+<legend>Endereço</legend>
 
-    <label for="cep">CEP:</label>
-    <input type="text" id="cep" name="cep" autocomplete="postal-code"
-           maxlength="9" placeholder="00000-000">
-    <br><br>
+<label for="cep">CEP:</label>
+<input
+    type="text"
+    id="cep"
+    name="cep"
+    autocomplete="postal-code"
+    maxlength="9"
+    placeholder="00000-000"
+    inputmode="numeric"
+>
+<br><br>
 
-    <label for="rua">Rua:</label>
-    <input type="text" id="rua" name="rua" readonly>
-    <br><br>
+<label for="rua">Rua:</label>
+<input type="text" id="rua" name="rua" readonly>
+<br><br>
 
-    <label for="numero">Número:</label>
-    <input type="number" id="numero" name="numero" min="1">
-    <br><br>
+<label for="numero">Número:</label>
+<input type="number" id="numero" name="numero" min="1">
+<br><br>
 
-    <label for="bairro">Bairro:</label>
-    <input type="text" id="bairro" name="bairro" readonly>
-    <br><br>
+<label for="bairro">Bairro:</label>
+<input type="text" id="bairro" name="bairro" readonly>
+<br><br>
 
-    <label for="cidade">Cidade:</label>
-    <input type="text" id="cidade" name="cidade" readonly>
-    <br><br>
+<label for="cidade">Cidade:</label>
+<input type="text" id="cidade" name="cidade" readonly>
+<br><br>
 
-    <label for="estado">Estado:</label>
-    <input type="text" id="estado" name="estado" readonly>
-    <br><br>
+<label for="estado">Estado:</label>
+<input type="text" id="estado" name="estado" readonly>
+<br><br>
 
-    <label for="regiao">Região:</label>
-    <input type="text" id="regiao" name="regiao" readonly>
-    <br><br>
+<label for="regiao">Região:</label>
+<input type="text" id="regiao" name="regiao" readonly>
+<br><br>
 
-    <label for="ddd">DDD:</label>
-    <input type="text" id="ddd" name="ddd" readonly>
-    <br>
-</body>
+<label for="ddd">DDD:</label>
+<input type="text" id="ddd" name="ddd" readonly>
+<br>
+
+
 <script>
-    //preencher os inputs com arrow functions
-    const preencherFormulario = (endereco) => {
-    document.getElementById("rua").value = endereco.logradouro;
-    document.getElementById("bairro").value = endereco.bairro;
-    document.getElementById("cidade").value = endereco.localidade;
-    document.getElementById("estado").value = endereco.uf;
-    document.getElementById("regiao").value = endereco.regiao;
-    document.getElementById("ddd").value = endereco.ddd;
-}
-//autopreenchimento
-const cepValido = (cep) => {
-    if (cep.length == 8) {
-        return true;
-    } else {
-        return false;
+const cepInput = document.getElementById("cep");
+
+cepInput.addEventListener("input", function () {
+    // Remove tudo que não for número
+    let cep = this.value.replace(/\D/g, "");
+
+    // Limita a 8 números
+    cep = cep.substring(0, 8);
+
+    // Formata: 00000-000
+    if (cep.length > 5) {
+        cep = cep.substring(0, 5) + "-" + cep.substring(5);
+    }
+
+    this.value = cep;
+
+    // Quando tiver 8 números, consulta o CEP
+    if (cep.replace(/\D/g, "").length === 8) {
+        buscarCep(cep.replace(/\D/g, ""));
+    }
+});
+
+
+async function buscarCep(cep) {
+    try {
+        const resposta = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+
+        if (!resposta.ok) {
+            throw new Error("Erro na consulta do CEP.");
+        }
+
+        const dados = await resposta.json();
+
+        // CEP inexistente
+        if (dados.erro) {
+            limparEndereco();
+            alert("CEP não encontrado.");
+            return;
+        }
+
+        // Preenche os campos automaticamente
+        document.getElementById("rua").value = dados.logradouro || "";
+        document.getElementById("bairro").value = dados.bairro || "";
+        document.getElementById("cidade").value = dados.localidade || "";
+        document.getElementById("estado").value = dados.estado || dados.uf || "";
+        document.getElementById("regiao").value = dados.regiao || "";
+        document.getElementById("ddd").value = dados.ddd || "";
+
+    } catch (erro) {
+        console.error("Erro ao consultar o CEP:", erro);
+        limparEndereco();
+        alert("Não foi possível consultar o CEP. Tente novamente.");
     }
 }
-//buscar API
-const pesquisarCep = async () => {
-    const cep = document.getElementById("cep").value;
-    const url = `http://viacep.com.br/ws/${cep}/json/`;
-    if (cepValido(cep)) {
-        const dados = await fetch(url);
-        const endereco = await dados.json();
-            preencherFormulario(endereco);
-        }
+
+
+function limparEndereco() {
+    document.getElementById("rua").value = "";
+    document.getElementById("bairro").value = "";
+    document.getElementById("cidade").value = "";
+    document.getElementById("estado").value = "";
+    document.getElementById("regiao").value = "";
+    document.getElementById("ddd").value = "";
 }
-document.getElementById("cep").addEventListener("focusout", pesquisarCep);
 </script>
 </html>
